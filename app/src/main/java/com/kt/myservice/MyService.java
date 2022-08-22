@@ -5,6 +5,7 @@ import static com.kt.myservice.MyApplication.CHANNEL_ID;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -19,8 +20,17 @@ import androidx.core.app.NotificationCompat;
 
 //foreground service
 public class MyService extends Service {
+
+    private static final int ACTION_PAUSE = 1;
+    private static final int ACTION_RESUME = 2;
+    private static final int ACTION_CLEAR = 3;
+
     //chạy mp3 thông qua MediaPlayer
     private MediaPlayer mediaPlayer;
+    //
+    private boolean isPlaying;  //mặc định false
+    //
+    private Song mSong;
 
     @Override
     public void onCreate() {
@@ -34,12 +44,20 @@ public class MyService extends Service {
         if (bundle != null){
             Song song = (Song) bundle.get("object_song");
             if (song != null) {
+                //gán mSong xử lý update view;
+                mSong = song;
                 //
                 startMusic(song);
                 //gửi dữ liệu service lên notification
                 sendNotification(song);
             }
         }
+
+        //nhận lại action từ Broadcast
+        int actionMusic = intent.getIntExtra("action_music_service",0);
+        //thực hiện xử lý music theo action mà ta có
+        handleActionMusic(actionMusic);
+
         return START_NOT_STICKY;
     }
     //start một link mp3 chạy nhạc
@@ -48,6 +66,37 @@ public class MyService extends Service {
             mediaPlayer = MediaPlayer.create(getApplicationContext(), song.getResource());
         }
         mediaPlayer.start();
+        //nó đang chạy nhạc
+        isPlaying = true;
+    }
+    //xử lý hoạt động của music
+    private void handleActionMusic(int action){
+        switch (action){
+            case ACTION_PAUSE:
+                pauseMusic();
+                break;
+            case ACTION_RESUME:
+                resumeMusic();
+                break;
+            case ACTION_CLEAR:
+                stopSelf(); //stop luôn service
+                break;
+        }
+    }
+    private void pauseMusic(){
+        if (mediaPlayer != null && isPlaying){
+            mediaPlayer.pause();
+            isPlaying = false;
+            sendNotification(mSong);
+        }
+    }
+    //tiếp tục phát nhạc
+    private void resumeMusic(){
+        if (mediaPlayer != null && !isPlaying){
+            mediaPlayer.start();
+            isPlaying = true;
+            sendNotification(mSong);
+        }
     }
 
     //gửi dữ liệu lên notification
@@ -64,6 +113,18 @@ public class MyService extends Service {
         remoteViews.setImageViewBitmap(R.id.img_song,bitmap);
         remoteViews.setImageViewResource(R.id.img_play_or_pause,R.drawable.ic_baseline_pause_24);
 
+        //Nếu nó đang chạy
+        if (isPlaying){
+            //bắt sự kiện với remoteViews
+            remoteViews.setOnClickPendingIntent(R.id.img_play_or_pause,getPendingIntent(this, ACTION_PAUSE));
+            remoteViews.setImageViewResource(R.id.img_play_or_pause,R.drawable.ic_baseline_pause_24);
+        }
+        //Nếu nó đang dừng ta muốn chạy
+        else {
+            remoteViews.setOnClickPendingIntent(R.id.img_play_or_pause,getPendingIntent(this, ACTION_RESUME));
+            remoteViews.setImageViewResource(R.id.img_play_or_pause,R.drawable.ic_baseline_play_circle_outline_24);
+        }
+        remoteViews.setOnClickPendingIntent(R.id.img_clear,getPendingIntent(this,ACTION_CLEAR));
 
         //đưa dữ liệu lên notification
         Notification notification = new NotificationCompat.Builder(this,CHANNEL_ID)
@@ -74,6 +135,16 @@ public class MyService extends Service {
                 .build();
         //đưa nó ra foreground service
         startForeground(1,notification);
+    }
+
+    //pending intent với từng action
+    private PendingIntent getPendingIntent(Context context, int action){
+        //sử dụng broadcast Receiver
+        Intent intent = new Intent(this,MyReceiver.class);
+        intent.putExtra("action_music",action);
+        //truyền dữ liệu qua broadcast receiver
+        //Nên ta sẽ xử lý trong broadcast receiver
+        return PendingIntent.getBroadcast(context.getApplicationContext(), action, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     @Nullable
