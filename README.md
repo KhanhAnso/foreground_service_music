@@ -38,3 +38,4 @@
 
 3.Chú ý
 - Với notification, vì nó cùng channel id nên nó sẽ tiếp tục cái nhạc đang phát thay vì nó tạo mới.
+- Khi gọi tới mediaPlayer.start(); nó sẽ tiếp tục notification
