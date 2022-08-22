@@ -41,3 +41,8 @@ Giao tiếp giữa Activity và ForegroundService thông qua broadcast receiver 
 3.Chú ý
 - Với notification, vì nó cùng channel id nên nó sẽ tiếp tục cái nhạc đang phát thay vì nó tạo mới.
 - Khi gọi tới mediaPlayer.start(); nó sẽ tiếp tục notification
+
+4.Demo
+
+![image](https://user-images.githubusercontent.com/65121835/185854125-4e1507ed-8cc6-4857-bf0a-3118516ec740.png)
+
