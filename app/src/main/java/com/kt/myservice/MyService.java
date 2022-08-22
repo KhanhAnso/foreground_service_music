@@ -17,13 +17,15 @@ import android.widget.RemoteViews;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 //foreground service
 public class MyService extends Service {
 
-    private static final int ACTION_PAUSE = 1;
-    private static final int ACTION_RESUME = 2;
-    private static final int ACTION_CLEAR = 3;
+    public static final int ACTION_PAUSE = 1;
+    public static final int ACTION_RESUME = 2;
+    public static final int ACTION_CLEAR = 3;
+    public static final int ACTION_START = 4;
 
     //chạy mp3 thông qua MediaPlayer
     private MediaPlayer mediaPlayer;
@@ -68,6 +70,8 @@ public class MyService extends Service {
         mediaPlayer.start();
         //nó đang chạy nhạc
         isPlaying = true;
+        //gửi action đến activity
+        sendActionToActivity(ACTION_START);
     }
     //xử lý hoạt động của music
     private void handleActionMusic(int action){
@@ -80,6 +84,8 @@ public class MyService extends Service {
                 break;
             case ACTION_CLEAR:
                 stopSelf(); //stop luôn service
+                //action đến activity
+                sendActionToActivity(ACTION_CLEAR);
                 break;
         }
     }
@@ -88,6 +94,8 @@ public class MyService extends Service {
             mediaPlayer.pause();
             isPlaying = false;
             sendNotification(mSong);
+            //action đến activity
+            sendActionToActivity(ACTION_PAUSE);
         }
     }
     //tiếp tục phát nhạc
@@ -96,6 +104,8 @@ public class MyService extends Service {
             mediaPlayer.start();
             isPlaying = true;
             sendNotification(mSong);
+            //action đến activity
+            sendActionToActivity(ACTION_RESUME);
         }
     }
 
@@ -108,7 +118,7 @@ public class MyService extends Service {
         //custom view notification
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), song.getImage());
         RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.layout_custom_notification);
-        remoteViews.setTextViewText(R.id.tv_single_song,song.getTitle());
+        remoteViews.setTextViewText(R.id.tv_title_song,song.getTitle());
         remoteViews.setTextViewText(R.id.tv_single_song,song.getSingle());
         remoteViews.setImageViewBitmap(R.id.img_song,bitmap);
         remoteViews.setImageViewResource(R.id.img_play_or_pause,R.drawable.ic_baseline_pause_24);
@@ -162,5 +172,22 @@ public class MyService extends Service {
             mediaPlayer = null;
         }
         super.onDestroy();
+    }
+
+
+    //func gửi action đến activity
+    //Nó được gọi khi ta thực hiện các action điều khiển bài nhạc với pause, resume, clear
+    private void sendActionToActivity(int action){
+        //Trong intent set 1 cái action cho nó để gửi qua activity
+        Intent intent = new Intent("send_data_to_activity");
+        //gửi object, action và trạng thái isPlaying qua activity
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("object_song",mSong);
+        bundle.putBoolean("status_player",isPlaying);
+        bundle.putInt("action_music",action);
+        intent.putExtras(bundle);
+        //sử dụng broadcast receiver để gửi dữ liệu
+        //gửi intent thông qua broadcast receiver đến activity
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 }
