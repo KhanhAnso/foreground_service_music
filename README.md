@@ -1,4 +1,4 @@
-Giao tiếp giữa Activity và ForegroundService thông qua broadcast receiver
+Giao tiếp giữa Activity và ForegroundService thông qua broadcast receiver (bài 5)
 
 1.Thực hiện custom một view cho notification
 - Có nút pause, resume và clear nhạc trên notification
