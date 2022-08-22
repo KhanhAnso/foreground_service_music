@@ -36,3 +36,5 @@
 ![image](https://user-images.githubusercontent.com/65121835/185852424-d6031cad-137e-4fda-9b95-f21f4211b28b.png)
 
 
+3.Chú ý
+- Với notification, vì nó cùng channel id nên nó sẽ tiếp tục cái nhạc đang phát thay vì nó tạo mới.
